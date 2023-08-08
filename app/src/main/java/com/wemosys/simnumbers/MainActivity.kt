@@ -2,6 +2,7 @@ package com.wemosys.simnumbers
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.telephony.SubscriptionManager
 import android.util.Log
@@ -17,6 +18,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.wemosys.simnumbers.ui.theme.SimNumbersTheme
+
 
 class MainActivity : ComponentActivity() {
     private val READ_PHONE_STATE_PERMISSION_REQUEST_CODE = 101
@@ -51,14 +53,22 @@ class MainActivity : ComponentActivity() {
                 android.Manifest.permission.READ_PHONE_NUMBERS
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            val subscriptionManager = SubscriptionManager.from(applicationContext)
+            val subscriptionManager =
+                getSystemService(TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
             val subsInfoList = subscriptionManager.activeSubscriptionInfoList
             var i = 1;
             Log.d("sim", "Current list = $subsInfoList")
+            simNumbers = "Current list = $subsInfoList\n\n\n"
             for (subscriptionInfo in subsInfoList) {
-                val number = "sim " + i + " Number is  ${subscriptionInfo.number}"
+                val subscriptionId = subscriptionInfo.subscriptionId
+                val phoneNumber = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    subscriptionManager.getPhoneNumber(subscriptionId) + " " + subscriptionInfo.iccId
+                } else {
+                    subscriptionInfo.number + " " + subscriptionInfo.iccId
+                }
+                val number = "sim $i Number is  $phoneNumber"
                 simNumbers = simNumbers + number + "\n"
-                Log.d("sim", number )
+                Log.d("sim", number)
                 i++
             }
         } else {
